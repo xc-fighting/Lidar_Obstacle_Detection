@@ -37,30 +37,74 @@ typename pcl::PointCloud<PointT>::Ptr ProcessPointClouds<PointT>::FilterCloud(ty
 
 }
 
-
+//function takes two param: cloud and inlier
 template<typename PointT>
-std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> ProcessPointClouds<PointT>::SeparateClouds(pcl::PointIndices::Ptr inliers, typename pcl::PointCloud<PointT>::Ptr cloud) 
+std::pair<typename pcl::PointCloud<PointT>::Ptr, 
+          typename pcl::PointCloud<PointT>::Ptr> 
+          ProcessPointClouds<PointT>::SeparateClouds(pcl::PointIndices::Ptr inliers, 
+                                                     typename pcl::PointCloud<PointT>::Ptr cloud) 
 {
   // TODO: Create two new point clouds, one cloud with obstacles and other with segmented plane
+    //to make this more concrete, obstacle means cars
+    typename pcl::PointCloud<PointT>::Ptr obstacle_cloud(new pcl::PointCloud<PointT>());
+    //plane means road
+    typename pcl::PointCloud<PointT>::Ptr plane_cloud(new pcl::PointCloud<PointT>());
 
-    std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> segResult(cloud, cloud);
+    for( int i = 0; i < inliers->indices.size(); i++ ) {
+         int point_cloud_index = inliers->indices[i];
+         plane_cloud->points.push_back(cloud->points[point_cloud_index]);
+    }
+
+    pcl::ExtractIndices<PointT> extractor;
+    extractor.setInputCloud(cloud);
+    extractor.setIndices(inliers);
+    //inliers (road plane) negative is the obstacles, I would rather call them cars
+    extractor.setNegative(true);
+    extractor.filter(*obstacle_cloud);
+    //need to keep typename here because of PointT template
+    std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> segResult(obstacle_cloud, plane_cloud);
+    //segResult is a std::pair<T1,T2> first is cars, second is road 
     return segResult;
 }
 
 
 template<typename PointT>
-std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> ProcessPointClouds<PointT>::SegmentPlane(typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, float distanceThreshold)
+std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> 
+ProcessPointClouds<PointT>::SegmentPlane(typename pcl::PointCloud<PointT>::Ptr cloud, 
+                                         int maxIterations, 
+                                         float distanceThreshold)
 {
     // Time segmentation process
     auto startTime = std::chrono::steady_clock::now();
-	pcl::PointIndices::Ptr inliers;
+	pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
+    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients());
     // TODO:: Fill in this function to find inliers for the cloud.
+    // reference link: https://pointclouds.org/documentation/tutorials/extract_indices.html#extract-indices
+    // check when I have problem understanding
 
+    // create the segnment object with template type PointT
+    pcl::SACSegmentation<PointT> seg;
+
+    seg.setOptimizeCoefficients (true);
+    //must set those below
+    seg.setModelType(pcl::SACMODEL_PLANE);
+    seg.setMethodType(pcl::SAC_RANSAC);
+    seg.setMaxIterations(maxIterations);
+    seg.setDistanceThreshold(distanceThreshold);
+    //set the input cloud for segmentation object
+    seg.setInputCloud(cloud);
+    //output into inliers, coefficients
+    seg.segment(*inliers, *coefficients);
+    if( inliers->indices.size() == 0 ) {
+        std::cout<<"Can not estimate with given data"<<std::endl;
+    }
+
+    std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> segResult = SeparateClouds(inliers,cloud);
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
     std::cout << "plane segmentation took " << elapsedTime.count() << " milliseconds" << std::endl;
 
-    std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> segResult = SeparateClouds(inliers,cloud);
+    
     return segResult;
 }
 

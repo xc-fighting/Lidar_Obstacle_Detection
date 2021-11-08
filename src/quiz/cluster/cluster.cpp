@@ -6,7 +6,8 @@
 #include <chrono>
 #include <string>
 #include "kdtree.h"
-
+#include <vector>
+#include <unordered_set>
 // Arguments:
 // window is the region to draw box around
 // increase zoom to see more of the area
@@ -75,12 +76,58 @@ void render2DTree(Node* node, pcl::visualization::PCLVisualizer::Ptr& viewer, Bo
 
 }
 
+/*
+  Proximity(point,cluster):
+    mark point as processed
+    add point to cluster
+    nearby points = tree(point)
+    Iterate through each nearby point
+        If point has not been processed
+            Proximity(cluster)
+
+EuclideanCluster():
+    list of clusters 
+    Iterate through each point
+        If point has not been processed
+            Create cluster
+            Proximity(point, cluster)
+            cluster add clusters
+    return clusters
+
+*/
+
+void Proximity(const std::vector<std::vector<float>>& points,
+               std::unordered_set<int>& processed, 
+			   int index,std::vector<int>& cluster, KdTree* tree, float distanceTol) {
+	//mark this one as processed
+    processed.insert(index);
+	cluster.push_back(index);
+	std::vector<int> nearbyPoints = tree->search(points[index],distanceTol);
+	for( int pointIdx: nearbyPoints ) {
+		if( processed.find(pointIdx) == processed.end() ) {
+			Proximity(points,processed,pointIdx,cluster,tree,distanceTol);
+		}
+	}
+}
+
+// tree already constructed with points
 std::vector<std::vector<int>> euclideanCluster(const std::vector<std::vector<float>>& points, KdTree* tree, float distanceTol)
 {
 
 	// TODO: Fill out this function to return list of indices for each cluster
 
 	std::vector<std::vector<int>> clusters;
+
+	std::unordered_set<int> processedIndices;
+
+	for( int index = 0; index < points.size(); index++ ) {
+		if( processedIndices.find(index) != processedIndices.end() ) {
+			continue;
+		}
+		std::vector<int> cluster;
+		Proximity(points,processedIndices,index,cluster,tree,distanceTol);
+		clusters.push_back(cluster);
+	}
  
 	return clusters;
 

@@ -71,7 +71,7 @@ struct KdTree
 				 }
 			 }
 			 else {
-                if( x < cur->point[1] ) {
+                if( y < cur->point[1] ) {
 					cur = cur->left;
 					dir = 0;
 				}

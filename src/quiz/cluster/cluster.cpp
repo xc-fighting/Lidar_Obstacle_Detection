@@ -97,14 +97,15 @@ EuclideanCluster():
 */
 
 void Proximity(const std::vector<std::vector<float>>& points,
-               std::unordered_set<int>& processed, 
+               std::vector<bool>& processed, 
 			   int index,std::vector<int>& cluster, KdTree* tree, float distanceTol) {
 	//mark this one as processed
-    processed.insert(index);
+    processed[index] = true;
 	cluster.push_back(index);
 	std::vector<int> nearbyPoints = tree->search(points[index],distanceTol);
 	for( int pointIdx: nearbyPoints ) {
-		if( processed.find(pointIdx) == processed.end() ) {
+		std::cout<<"the nearby points are:"<<pointIdx<<endl;
+		if( processed[pointIdx] == false ) {
 			Proximity(points,processed,pointIdx,cluster,tree,distanceTol);
 		}
 	}
@@ -117,11 +118,11 @@ std::vector<std::vector<int>> euclideanCluster(const std::vector<std::vector<flo
 	// TODO: Fill out this function to return list of indices for each cluster
 
 	std::vector<std::vector<int>> clusters;
-
-	std::unordered_set<int> processedIndices;
+    int len = points.size();
+	std::vector<bool> processedIndices(len,false);
 
 	for( int index = 0; index < points.size(); index++ ) {
-		if( processedIndices.find(index) != processedIndices.end() ) {
+		if( processedIndices[index] == true ) {
 			continue;
 		}
 		std::vector<int> cluster;

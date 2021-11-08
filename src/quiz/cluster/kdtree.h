@@ -129,7 +129,7 @@ struct KdTree
 			
 		    }
 		   else {
-            // check for x 
+            // check for y 
 			if( cur->point[1] < ymin ) {
 				searchNodes(candidateSet,cur->right,depth+1,target,distanceTol);
 			}

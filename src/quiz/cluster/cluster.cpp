@@ -125,6 +125,7 @@ std::vector<std::vector<int>> euclideanCluster(const std::vector<std::vector<flo
 		if( processedIndices[index] == true ) {
 			continue;
 		}
+		std::cout<<"point:"<<index<<" start cluster:"<<points[index][0]<<","<<points[index][1]<<endl;
 		std::vector<int> cluster;
 		Proximity(points,processedIndices,index,cluster,tree,distanceTol);
 		clusters.push_back(cluster);
@@ -159,9 +160,11 @@ int main ()
 
   	int it = 0;
   	render2DTree(tree->root,viewer,window, it);
+	//tree->printTree();
   
   	std::cout << "Test Search" << std::endl;
-  	std::vector<int> nearby = tree->search({-6,7},3.0);
+  //	std::vector<int> nearby = tree->search({7,6},3.0);
+    std::vector<int> nearby = tree->search({-6,7},3.0);
   	for(int index : nearby)
       std::cout << index << ",";
   	std::cout << std::endl;

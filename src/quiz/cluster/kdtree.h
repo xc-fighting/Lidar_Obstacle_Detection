@@ -2,7 +2,7 @@
 // Quiz on implementing kd tree
 
 #include "../../render/render.h"
-
+#include <queue>
 
 // binary search tree with even level split by x
 // odd level split by y
@@ -38,7 +38,32 @@ struct KdTree
 	~KdTree() {
 		delete root;
 	}
-    
+    void printTree() {
+		std::queue<Node*> nodeQueue;
+		nodeQueue.push(root);
+		int level = 0;
+		while( nodeQueue.empty() == false ) {
+            int size = nodeQueue.size();
+			std::cout<<"current level:"<<level<<std::endl;
+			for(int index = 0; index < size; index++ ) {
+				Node* frontNode = nodeQueue.front();
+				nodeQueue.pop();
+                
+				
+				std::cout<<"("<<frontNode->point[0]<<","<<frontNode->point[1]<<") ";
+				if( frontNode->left != nullptr ) {
+                    nodeQueue.push(frontNode->left);
+				}
+				if( frontNode->right != nullptr ) {
+                    nodeQueue.push(frontNode->right);
+				}
+				
+				
+			}
+			std::cout<<std::endl;
+			level++;
+		}
+	}
 	//better to use iterative way
 	void insertNode( float x, float y, int id ) {
 
@@ -48,7 +73,7 @@ struct KdTree
 		 Node* newNode = new Node(coordinate, id);
 
          if( this->root == nullptr ) {
-			 
+			 std::cout<<"construct the root:"<<coordinate[0]<<","<<coordinate[1]<<","<<id<<std::endl;
 			 this->root = newNode;
 			 return;
 		 }
@@ -105,6 +130,7 @@ struct KdTree
 		if( cur == nullptr ) {
 			return;
 		}
+		cout<<"start search from:"<<cur->point[0]<<","<<cur->point[1]<<std::endl;
 		float xmin = target[0] - distanceTol;
 		float xmax = target[0] + distanceTol;
 		float ymin = target[1] - distanceTol;
@@ -114,16 +140,19 @@ struct KdTree
 		float dis = sqrt(x2+y2);
 		if( dis <= distanceTol ) {
 			candidateSet.push_back(cur->id);
-			searchNodes(candidateSet, cur->right, depth+1, target, distanceTol);
 			searchNodes(candidateSet, cur->left, depth+1, target, distanceTol);
+			searchNodes(candidateSet, cur->right, depth+1, target, distanceTol);
+			
 		}
 		else {
               if( depth % 2 == 0 ) {
 			    // check for x 
 			   if( cur->point[0] < xmin ) {
+				   cout<<"go to right"<<std::endl;
 				   searchNodes(candidateSet,cur->right,depth+1,target,distanceTol);
 			   }
 			   else if( cur->point[0] > xmax ) {
+				cout<<"got to left"<<std::endl;
 				searchNodes(candidateSet,cur->left, depth+1,target, distanceTol);
 			   }
 			
@@ -145,6 +174,7 @@ struct KdTree
 	// return a list of point ids in the tree that are within distance of target
 	std::vector<int> search(std::vector<float> target, float distanceTol) {
 		std::vector<int> ids;
+		std::cout<<"search:"<<target[0]<<","<<target[1]<<std::endl;
 		searchNodes(ids,root,0,target,distanceTol);
 		return ids;
 	}

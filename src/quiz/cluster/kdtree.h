@@ -123,8 +123,8 @@ struct KdTree
         insertNode(point[0], point[1], id);
 	}
     
-	//solution 1, nearly search every node in the tree
-	void searchNodes(std::vector<int>& candidateSet,Node* cur,
+	//wrong solution below, check for reason:
+	/*void searchNodes(std::vector<int>& candidateSet,Node* cur,
 	                 int depth,std::vector<float> target, 
 					 float distanceTol) {
 		if( cur == nullptr ) {
@@ -170,7 +170,60 @@ struct KdTree
 		}
        
 		return;
+	}*/
+
+    //solution 
+	void searchNodes(std::vector<int>& candidateSet,Node* cur,
+	                 int depth,std::vector<float> target, 
+					 float distanceTol) {
+		if( cur == nullptr ) {
+			return;
+		}
+		cout<<"start search from:"<<cur->point[0]<<","<<cur->point[1]<<std::endl;
+		float xmin = target[0] - distanceTol;
+		float xmax = target[0] + distanceTol;
+		float ymin = target[1] - distanceTol;
+		float ymax = target[1] + distanceTol;
+		float curx = cur->point[0];
+		float cury = cur->point[1];
+		if( curx >= xmin && curx <= xmax && cury >= ymin && cury <= ymax ) {
+			  float x2 = (cur->point[0] - target[0]) * (cur->point[0] - target[0]);
+		      float y2 = (cur->point[1] - target[1]) * (cur->point[1] - target[1]);
+		      float dis = sqrt(x2+y2);
+		      if( dis <= distanceTol ) {
+			       candidateSet.push_back(cur->id);
+		      }
+			 
+		}
+	
+        if( depth % 2 == 0 ) {
+			    // check for x 
+			   if( cur->point[0] > xmin ) {
+				   // either current < xmax or current > xmax
+				   // both need to search left part
+				   searchNodes(candidateSet,cur->left,depth+1,target,distanceTol);
+			   }
+			   if( cur->point[0] < xmax ) {
+				 //either current > xmin or current < xmin
+				 //both search right part
+				 searchNodes(candidateSet,cur->right, depth+1,target, distanceTol);
+			   }
+			
+		}
+		else {
+            // check for y 
+			if( cur->point[1] > ymin ) {
+				searchNodes(candidateSet,cur->left,depth+1,target,distanceTol);
+			}
+			if( cur->point[1] < ymax ) {
+				searchNodes(candidateSet,cur->right, depth+1,target, distanceTol);
+			}
+			
+		  }
+       
+		return;
 	}
+
 	// return a list of point ids in the tree that are within distance of target
 	std::vector<int> search(std::vector<float> target, float distanceTol) {
 		std::vector<int> ids;
